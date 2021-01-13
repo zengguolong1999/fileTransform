@@ -1,4 +1,5 @@
 /* Package dvdfile implements functions for the manipulation of file. It provides several functions to transform the file content of []byte into [][]byte with line concept or [][][]byte with parameter concept. */
+/* Note: the slice returned is exactly a slice of address of the origin slice. And the changes made to it is visible to the origin byte slice. If you want to modify the content, you should make a new slice, copy content, modify and finally replace the corresponding slice to it.*/
 /* dvdfile包实现了一些操纵文件的函数。这些函数可以把[]byte类型的内容分割为行概念的[][]byte，或行和段落概念的[][][]byte类型。*/
 package dvdfile
 
