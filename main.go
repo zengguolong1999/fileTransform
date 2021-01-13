@@ -1,20 +1,5 @@
 package main
 
-//program process:
-//read file,
-//parse file using regex {
-//    direct {
-//        parse file
-//    },
-//    indirect {
-//        find specific place,
-//        change something near that place,
-//    },
-//},
-//close file
-
-//build fileutil to divide a file into word, line, parameter etc for semantic use.
-
 import (
     "os"
     "io"
@@ -55,7 +40,7 @@ func main() {
     reComment := regexp.MustCompile(`^;|\[[a-zA-Z ]*\]`)
     reDeclare := regexp.MustCompile(`\[([a-zA-Z]+ ?)*\]`)
     re2BTo1W := regexp.MustCompile(`0x[0-9A-Z]{2}  0x[0-9A-Z]{2}`)
-    paras := dvdfile.TransToParasMem(data)
+    paras := dvdfile.TransToParas(data)
     for _, para := range paras {
         for j, line := range para {
             if reComment.Match(line) {
@@ -83,12 +68,17 @@ func main() {
                 declareLine := "unsigned int " + varName + "[" + strconv.Itoa(lineCount2B) + "]" + " = {\r\n"
                 para[j+1] = []byte(declareLine)
             } else if re2BTo1W.Match(line) { //pattern: "0xAF  0x23\r\n"
-                para[j] = append(line[:4], line[8:10]...)
-                para[j] = append(para[j], []byte(",\r\n")...)
+                newLine := make([]byte, 9)
+                copy(newLine[:4], line[:4])
+                copy(newLine[4:6], line[8:10])
+                copy(newLine[6:], []byte(",\r\n"))
+                para[j] = newLine
             }
         }
-        cplexParas[i] = append(cplexParas[i], []byte("\r\n"))
-        cplexParas[i][len(cplexParas[i])-2] = []byte("};\r\n") //add "}\n"
+        newPara := make([][]byte, len(cplexParas[i])+1)
+        copy(newPara, cplexParas[i])
+        newPara[len(newPara)-1] = []byte("\r\n")
+        newPara[len(newPara)-2] = []byte("};\r\n") //add a new line "}\n"
     }
     lastPara := paras[len(paras)-1] //add comment to last line(checksum)
     lastPara[len(lastPara)-1] = insSlashCmt(lastPara[len(lastPara)-1])
@@ -124,30 +114,4 @@ func insSlashCmt(line []byte) []byte {
     res[0] = '/'
     res[1] = '/'
     return res
-}
-
-func Int2Str(n int) string {
-    isNegative := false
-    if n == 0 {
-        return "0"
-    }
-    if n < 0 {
-        isNegative = true
-        n = -n
-    }
-    res := make([]byte, 0)
-    for n > 0 {
-        c := n%10
-        res = append(res, byte(c+48))
-        n = n/10
-    }
-    for i, j := 0, len(res)-1; i<j; i, j = i+1, j-1{
-        res[i], res[j] = res[j], res[i]
-    }
-    if isNegative {
-        res = append(res, ' ')
-        copy(res[1:], res[:len(res)-1])
-        res[0] = '-'
-    }
-    return string(res)
 }
